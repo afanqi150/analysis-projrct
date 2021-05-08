@@ -1,0 +1,331 @@
+---
+title: "Analysis For Finding 5 key players "
+author: "Yingqi Chen"
+date: "04/05/2021"
+output:
+  html_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# 1.Introduction
+
+It is known that organized basketball is a game with 5 players for each team. There are three main positions on the court: guard, forward, and centre. More specifically, each of the 5 positions are known by point guard (PG), shooting guard (SG), small forward (SF), power forward (PF), and centre(C). Besides, during the organization, PG is represented by 1, SG is 2, SF is 3, PF is 4 and C is 5. 
+
+As PG position, the player should have fast speed and be good at driving and short-range. In the NBA, PGs are mostly between 1.78m to 1.98m with shoes. Good PGs increase team efficiency and generally have a high number of assists.
+
+Most SGs are prolific from the three-point range and long-mid range. They need to be patient and methodically circulate the three-point line linear with that of the ball. Besides, they need to be good at moving without the ball to create open looks for themselves. In the NBA, SGs usually range from 1.85m to 2.01m with shoes.
+
+The SF is considered to be the most versatile of the 5 players. All kinds of small forwards should have the ability to "get to the line" and draw fouls by aggressively attempting (post-up) plays, lay-ups, or slam dunks. 
+
+The PFs are often the team’s most powerful and dependent scorer, being able to score close to the basket while also being able to shoot mid-range jump shots from 10-15 feet from the bank. The PFs usually range from 2.01m to 2.13m.
+
+The centres are usually the tallest players on the floor. In the NBA, they are usually around 2.03m tall with shoes. 
+
+Different positions have different responsibilities, it is significant to find the most suitable player for each position. Meanwhile, our budget for player contracts next season is $118 million and the aim of this project is to find the most optimal team with 5 players which is suitable with our budget. It is of great significance since our team Chicago Bull is No.27 during last season. We need to use great statistical technology to find the most suitable players to get better results in the following seasons. 
+
+## Load required packages
+```{r packages, message=FALSE}
+library(tidyverse)
+library(ggplot2)
+library(broom)
+library(Lahman)
+```
+
+
+## data source
+The raw data are get from last basketball game play season. These are the links to the sources:
+[The player statistics](https://www.basketball-reference.com/leagues/NBA_2019_totals.html)
+[The player salaries](https://hoopshype.com/salaries/),(https://hoopshype.com/salaries/)
+[The team payroll](https://www.basketball-reference.com/leagues/NBA_2019.html)
+[The team statistics1](https://www.basketball-reference.com/leagues/NBA_2019.html)
+[The team statistics2](https://www.basketball-reference.com/leagues/NBA_2019.html)
+
+# 2.Reading and cleaning the raw data
+Reading data
+```{r read_data, message=FALSE}
+player_salaries <-read_csv("data/2018-19_nba_player-salaries.csv")
+player_statistics <-read_csv("data/2018-19_nba_player-statistics.csv")
+team_statistics_1 <-read_csv("data/2018-19_nba_team-statistics_1.csv")
+team_statistics_2 <-read_csv("data/2018-19_nba_team-statistics_2.csv")
+team_payroll <-read_csv("data/2019-20_nba_team-payroll.csv")
+
+```
+There are many variables in the data sources. 
+[The specific explanation of the variables is here](https://unicanberra.instructure.com/courses/9531/pages/data-description-reproducible-data-analysis-project)  
+
+# 3. Exploratory analysis
+## Checking the data
+check the structure of the data file using `str()`
+```{r structure}
+str(player_statistics)
+```
+check the first 6 rows of the data file using `head()`
+```{r head}
+knitr::kable(head(player_statistics))
+```
+check the last 6 rows of the data file using`tail`
+```{r tail}
+tail(player_statistics)
+```
+check for missing values using:
+```{r na,echo=FALSE}
+sum(is.na(player_statistics))
+```
+drop the rows with the missing values
+```{r drop_na}
+player_statistics2 <-drop_na(player_statistics)
+```
+## Firstly, we need to analyse the players at PG position
+```{r}
+df_PG <- player_statistics2[player_statistics2$Pos=="PG",]
+```
+There are 126 PG players here in total.
+
+Meanwhile, we want to take a look at the distribution of the age of the PG players
+```{r}
+ggplot(data = df_PG,aes(x = Age)) +
+  geom_histogram(mapping = aes(y = ..density..), colour = "black", fill = "dodgerblue", binwidth = 1)+
+  geom_density(alpha = 0.3 , fill = "black")
+```
+The distribution of the age of the PG players is right skewed and the mean is mode is around 27 since the PG players need both experience and speed. They cannot be too youg or old.
+We can compare the PGs' age distribution with all players' age distribution.
+all players' age distribution:
+```{r}
+ggplot(data = player_statistics2,aes(x = Age)) +
+  geom_histogram(mapping = aes(y = ..density..), colour = "black", fill = "pink",binwidth = 0.99)+
+  geom_density(alpha = 0.3, fill = "black")
+```
+
+
+From the introduction part, we know as a PG player,the ability of assistance is very important. Meanwhile, they are inside the 3 point line. so the 2P% is also an important variable as well as eFG%. 
+
+
+## Secondly, we analyse the players at SG position.
+```{r}
+df_SG <- player_statistics2[player_statistics2$Pos == "SG",]
+```
+
+```{r}
+ggplot(df_SG, aes(x = Age, ))+
+  geom_histogram(mapping = aes(y = ..density..), colour = "black", fill = "dodgerblue",binwidth = 1)+
+  geom_density(alpha = 0.3, fill = "black")
+```
+From the introduction, we know 3P% is the most important variable for the SG position, we check the distribution of 3P% and the distribution of 2P%
+```{r}
+summary(df_SG$`3P%`) 
+summary(df_SG$`2P%`)
+
+```
+We filter the first 25th of 3P% as the first step
+```{r}
+Great_SG <- df_SG[df_SG$`3P%`>0.375,]
+Great_SG <- Great_SG[Great_SG$`2P%`>0.5110,]
+```
+We get 11 great SG players during this part to help further analysis in the next part. There may be other important variables that influence the general ability of the SG players, they will be found in the modelling part.
+
+## Thirdly, analysis of the players at SF position
+
+```{r}
+df_SF <- player_statistics2 %>%
+  filter(player_statistics2$Pos =="SF",)
+```
+```{r}
+ggplot(data = df_SF)+
+  geom_boxplot(mapping = aes(x = `Tm`, y = `PF`,colour = `Tm` ))
+```
+From the box plot, we cna find the UTA team's SF players have great ability in Personal Fuels. 
+
+Besides, since PF and 3P% are both important variables to the SFs. We generate some great SFs here.
+```{r}
+summary(df_SF$PF)
+summary(df_SF$`3P%`)
+```
+Then we filter the first 25th SFs with the PF variable, following with the first 25 3P% variable.
+```{r}
+Great_SF <- df_SF[df_SF$PF > 122 & df_SF$`3P%`>0.372 ,]
+``` 
+So 10 great SFs are generated here.
+
+
+## Fourthly, analysis of the players at PF position
+```{r}
+df_PF <- player_statistics2 %>%
+  filter(player_statistics2$Pos =="PF",)
+```
+Since the PFs are often the team’s most powerful and dependent scorer, we think the PTS is the most important variable for them, so we check the distribution of the PTS here:
+```{r}
+df_PF <- player_statistics2 %>%
+  filter(player_statistics2$Pos =="PF",) %>%
+  group_by(df_PF$Tm)
+ggplot(data = df_PF)+
+  geom_boxplot(mapping = aes(x = df_PF$Tm, y = df_PF$PTS,colour = df_PF$Tm ))
+```
+Then we want to check the distributino of the age of the PFs and want to find if age will influence their ability to be good PFs.
+```{r}
+ggplot(data = df_PF,aes(x = Age)) +
+  geom_histogram(mapping = aes(y = ..density..), colour = "black", fill = "dodgerblue", binwidth = 1.3)+
+  geom_density(alpha = 0.3 , fill = "black")
+```
+Most of the PFs are younger than 25 years old.
+
+## Fifthly, analysis of the players at centre
+They are typically skilled at gathering rebounds, contesting shots and setting screens on players. So ORB, DRB and BLK are important variables for them.
+```{r}
+df_C <- player_statistics2[player_statistics2$Pos == "C",]
+```
+
+
+# 4. Data modelling and results
+
+## Firstly, for PG position
+We set the PTS as the explained variable, and 2P%, AST, Age as the exploratory variables:
+```{r pairs}
+lm_PG <- lm(PTS ~ AST + Age, data = df_PG )
+tidy(lm_PG, conf.int = TRUE)
+```
+We can see the estimate value of AST os 2.691, so it has great influence for PTS for the PGs. Besides, the estimate value of Ageis negative, so it means the younger the PGs are, the high PTS they will get.
+
+So we summarize them
+```{r}
+summary(df_PG$Age) 
+summary(df_PG$AST)
+```
+Then we filter the great PGs:
+```{r}
+Great_PG <- df_PG[df_PG$Age < 26 & df_PG$AST>278.5 ,]
+```
+We get 11 Great PGs here to wait for being further choosen.
+
+## Secondly, for the SGs
+
+We already get 11 great SGs in the explorary step, but we need to prove our assumption is right, if the PF and 3P% the significant variables for SGs:
+```{r}
+lm_SG <- lm(PTS ~ PF + `3P%`, data = df_SG )
+tidy(lm_SG)
+```
+We can see 3P% is not a suitable variable for SGs.
+```{r}
+lm_SG <- lm(PTS ~ PF + `2P%` + Age + `eFG%` + `3P%`, data = df_SG)
+tidy(lm_SG)
+```
+Since the esimate values of 2P% and 3P% are too high, they are not significant variables. 
+So we filter the SGs only by PTS and PF
+
+```{r}
+summary(df_SG$PF) 
+summary(df_SG$PTS)
+```
+```{r}
+Great_SG <- df_SG[df_SG$PF > 131 & df_SG$PTS > 695 ,]
+```
+
+## Thirdly, for the SFs
+```{r}
+lm_SF <- lm(PTS ~ PF + `3P%` + `2P%` + Age,data = df_SF)
+tidy(lm_SF)
+```
+```{r}
+summary(df_SF$PF)
+summary(df_SF$PTS)
+```
+```{r}
+Great_SF <- df_SF[df_SF$PF > 122 & df_SF$PTS> 566.2,]
+```
+
+## Fourthly, for the PFs
+```{r}
+lm_PF <- lm(PTS ~ Age + `2P%` + `3P%` + PF, data = df_PF)
+tidy(lm_PF)
+```
+PF and Age are important variables
+```{r}
+summary(df_PF$Age)
+summary(df_PF$PF)
+summary(df_PF$PTS)
+```
+```{r}
+Great_PF <- df_PF[df_PF$Age < 24 & df_PF$PF > 143.5 & df_PF$PTS > 700.2 ,]
+```
+So we get 7 great PFs for further choice.
+
+## Fifthly, for the Cs
+```{r}
+summary(df_C$PTS)
+```
+```{r}
+Great_C <- df_C[df_C$PTS > 876.5,]
+```
+We found 22 great Centres here.
+
+
+# 5.Player recommendation
+
+## We will choose the most suitable players for our team with our budget of $118 million.
+
+### Firstly, we take a look at the distribution of the salary for all players
+```{r}
+ggplot(data = player_salaries) +
+  geom_point(mapping = aes(x = player_salaries$player_id, y = player_salaries$salary), colour = "dodgerblue" )
+```
+## Choose the PG position
+```{r}
+player_salaries %>%
+  filter(player_salaries$player_name == "Trae Young",)
+```
+We choose Trase Young as the PG position.
+
+## Choose the SG position
+
+```{r}
+player_salaries %>%
+  filter(player_salaries$player_name == "Buddy Hield",)
+```
+We choose Buddy Hield as the SG position.
+
+## Choose the SF position
+```{r}
+player_salaries %>%
+  filter(player_salaries$player_name == "Bojan Bogdanovic")
+```  
+We choose Bojan Bogdanovic as the SF position
+
+## Choose the PF position
+```{r}
+player_salaries %>%
+  filter(player_salaries$player_name == "Kyle Kuzma")
+```
+We chosse Lyle Kuzma as our PF position
+
+## Choose the C position
+```{r}
+player_salaries %>%
+  filter(player_salaries$player_name == "Karl-Anthony Towns")
+```
+We choose Larl-Anthonu Towns as our Centre player.
+
+
+
+# 6.Summary
+Until now, we have choosen five key players for our team in the next season.
+They are Trae Young(1), Buddy Hield(2), Bojan Bogdanovic(3), Kyle Kuzma(4),Karl-Anthony Towns(5). In our analysis, we put the PTS as the most important variable to evaluate the players' ability, together with other specific variables for each position. For the limitation, we can do more analysis of the relationships of many different variables to find more information that may influence the results.
+
+
+# 7.Reference list
+https://en.wikipedia.org/wiki/Basketball_positions
+
+
+
+
+
+
+
+
+
+
+
+
+
